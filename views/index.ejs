@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Plaid Walkthrough Example</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <button id="link-button">Link Account</button>
+  <button id="item-button">Get Items</button>
+  <button id="accounts-button">Get Accounts</button>
+  <button id="transaction-button">Get Transactions</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <script type="text/javascript">
+  var token;
+  var handler = Plaid.create({
+    clientName: 'Plaid Walkthrough Demo',
+    env: 'sandbox',
+    key: 'dd28db8e4c5148616b707f0ea5bdf5', // Replace with your public_key to test with live credentials
+    product: ['auth', 'transactions'],
+    webhook: 'localhost:8000', // Optional – use webhooks to get transaction and error updates
+    selectAccount: false, // Optional – trigger the Select Account
+    onLoad: function() {
+      // Optional, called when Link loads
+    },
+    onSuccess: function(public_token, metadata) {
+      // Send the public_token to your app server.
+      // The metadata object contains info about the institution the
+      // user selected and the account ID, if `selectAccount` is enabled.
+      console.log('success')
+      $.post('/get_access_token', {
+        public_token: public_token,
+      }, function(err, data) {
+        console.log('errrrr', err, 'data', data)
+        token = data.data
+      });
+    },
+    onExit: function(err, metadata) {
+      // The user exited the Link flow.
+              console.log('ererer', err)
+
+      if (err != null) {
+        // The user encountered a Plaid API error prior to exiting.
+      }
+      // metadata contains information about the institution
+      // that the user selected and the most recent API request IDs.
+      // Storing this information can be helpful for support.
+    }
+  });
+
+  $('#link-button').on('click', function(e) {
+    handler.open();
+    // Alternatively, you can have a specific institution
+    // prompt for authentication. Example:
+    //
+    // handler.open('ins_100000');
+    //
+    // This will open Link with Union Bank as the institution.
+  });
+
+   $('#item-button').on('click', function(e) {
+     $.post('/item', {
+       access_token: token
+     }, (err, data) => {
+       console.log('err', err)
+       console.log('data', data)
+     })
+  });
+
+  $('#transaction-button').on('click', function(e) {
+     $.post('/transactions', (err, data) => {
+       console.log('err', err)
+       console.log('data', data)
+     })
+  });
+
+   $('#accounts-button').on('click', function(e) {
+     $.get('/accounts', (err, data) => {
+       console.log('err', err)
+       console.log('data', data)
+     })
+  });
+  </script>
+</body>
+</html>
